@@ -38,6 +38,10 @@ class MobileChartEditorState extends ChartingState
 	var hitboxHoldStart:Array<Float> = [-1, -1, -1, -1];
 	var hitboxHoldNote:Array<MetaNote> = [null, null, null, null];
 
+	var recordAsOpponent:Bool = false;
+	var sideBtn:FlxButton;
+	var disabledDuringRecording:Array<flixel.FlxBasic> = [];
+
 	override function create()
 	{
 		super.create();
@@ -71,6 +75,19 @@ class MobileChartEditorState extends ChartingState
 		stopSongBtn.color = FlxColor.RED;
 		stopSongBtn.visible = stopSongBtn.active = false;
 		add(stopSongBtn);
+
+		sideBtn = new FlxButton(FlxG.width - 220, 210, 'Grabar: Jugador', toggleSide);
+		sideBtn.setGraphicSize(200, 44);
+		sideBtn.updateHitbox();
+		sideBtn.color = FlxColor.CYAN;
+		add(sideBtn);
+	}
+
+	function toggleSide()
+	{
+		recordAsOpponent = !recordAsOpponent;
+		sideBtn.label.text = recordAsOpponent ? 'Grabar: Oponente' : 'Grabar: Jugador';
+		sideBtn.color = recordAsOpponent ? FlxColor.MAGENTA : FlxColor.CYAN;
 	}
 
 	function toggleHitboxMode()
@@ -101,6 +118,8 @@ class MobileChartEditorState extends ChartingState
 		stopSongBtn.visible = stopSongBtn.active = true;
 
 		FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 1, false);
+		if (curSec >= 0 && curSec < cachedSectionTimes.length)
+			FlxG.sound.music.time = cachedSectionTimes[curSec];
 
 		hitbox = new Hitbox();
 		add(hitbox);
@@ -109,6 +128,23 @@ class MobileChartEditorState extends ChartingState
 
 		hitbox.onButtonDown.add(onHitboxDown);
 		hitbox.onButtonUp.add(onHitboxUp);
+
+		// Bloquea el resto de los botones/UI del editor para que un toque en
+		// el hitbox no se cuele y toque algo de atrás sin querer.
+		var mine:Array<flixel.FlxBasic> = [hitboxModeBtn, largeSustainBtn, startSongBtn, stopSongBtn, sideBtn, hitbox];
+		disabledDuringRecording = [];
+		for (m in members)
+		{
+			if (m == null || !m.exists)
+				continue;
+			if (mine.indexOf(m) >= 0)
+				continue;
+			if (m.active)
+			{
+				m.active = false;
+				disabledDuringRecording.push(m);
+			}
+		}
 	}
 
 	function stopRecording()
@@ -129,6 +165,11 @@ class MobileChartEditorState extends ChartingState
 			hitbox = null;
 		}
 		laneButtons = [];
+
+		for (m in disabledDuringRecording)
+			if (m != null)
+				m.active = true;
+		disabledDuringRecording = [];
 
 		for (i in 0...4)
 		{
@@ -180,7 +221,7 @@ class MobileChartEditorState extends ChartingState
 
 		var strumTime:Float = FlxG.sound.music != null ? FlxG.sound.music.time : 0;
 		var secNum:Int = sectionForTime(strumTime);
-		var noteData:Int = lane + 4; // lado del jugador (mustPress), carriles 4-7
+		var noteData:Int = recordAsOpponent ? lane : lane + 4;
 
 		var noteAdded:MetaNote = createNote([strumTime, noteData, 0], secNum);
 		notes.push(noteAdded);
