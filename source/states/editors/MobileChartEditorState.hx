@@ -168,7 +168,7 @@ class MobileChartEditorState extends ChartingState
 	function sectionForTime(t:Float):Int
 	{
 		var sec = 0;
-		while (cachedSectionTimes[sec + 1] != null && cachedSectionTimes[sec + 1] <= t)
+		while (sec + 1 < cachedSectionTimes.length && cachedSectionTimes[sec + 1] <= t)
 			sec++;
 		return sec;
 	}
