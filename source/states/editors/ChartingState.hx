@@ -1,6 +1,7 @@
 package states.editors;
 
 import flixel.FlxSubState;
+import flixel.ui.FlxButton;
 import flixel.util.FlxSave;
 import flixel.util.FlxSort;
 import flixel.util.FlxSpriteUtil;
